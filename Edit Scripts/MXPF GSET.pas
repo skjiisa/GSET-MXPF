@@ -13,6 +13,15 @@ var
   slLvli, slLvliM, slLvliF: TStringList;
   oftM, oftF: IInterface;
 
+function CheckInEDID(Value: string): Boolean;
+begin
+  Result := 0;
+  // Template:
+  //  OR pos('[word]',Value) <> 0
+  if pos('Bandit',Value) <> 0 OR pos('Warlock',Value) <> 0 OR pos('Spellsword',Value) <> 0 OR pos('thug',Value) <> 0 OR pos('Dremora',Value) <> 0 then
+    Result := 1;
+end;
+
 function IndexOfStringInArray(Value: string; Strings: TStringList): Integer;
 var I: Integer;
 begin
@@ -122,10 +131,10 @@ var
   i, j, k, index: integer;
   rec, item, items, lvliM, lvliF: IInterface;
 begin
-  slFiles := TStringList.Create;
+  {slFiles := TStringList.Create;
   for i := 0 to FileCount - 2 do begin
     slFiles.Add(GetFileName(FileByLoadOrder(i)));
-  end;
+  end;}
 
   // get file selection from user
   if not MultiFileSelectString('Select the files you want to patch', sFiles) then 
@@ -161,46 +170,47 @@ begin
   slLvliF := TStringList.Create;
   slLvliM := TStringList.Create;
 
-  PatchFileByAuthor('Isvvc - GBET');
+  PatchFileByAuthor('Isvvc - GSET');
   
   AddMessage('Processing outfits and leveled lists...');
   // add names of outfits to the stringlist
   for i := 0 to MaxRecordIndex do begin
     rec := GetRecord(i);
 
-    slOutfits.Add(Name(rec));
-    oftM := CopyRecordToPatchWithSuffix(i, 'Male');
-    oftF := CopyRecordToPatchWithSuffix(i, 'Female');
-    slOutfitsM.AddObject(Name(oftM), TObject(oftM));
-    slOutfitsF.AddObject(Name(oftF), TObject(oftF));
+    if CheckInEDID(geev(rec, 'EDID')) then begin
+      slOutfits.Add(Name(rec));
+      oftM := CopyRecordToPatchWithSuffix(i, 'Male');
+      oftF := CopyRecordToPatchWithSuffix(i, 'Female');
+      slOutfitsM.AddObject(Name(oftM), TObject(oftM));
+      slOutfitsF.AddObject(Name(oftF), TObject(oftF));
 
-    items := ElementByPath(rec, 'INAM');
-    k := 0;
-    for j := 0 to ElementCount(items) - 1 do begin
-      item := LinksTo(ElementByIndex(items, j));
-      //AddMessage(Signature(item)+' '+GetEditValue(ElementByIndex(items, j)));
-      if Signature(item) = 'LVLI' then begin
-        index := IndexOfStringInArray(Name(item), slLvli);
-        if index = -1 then begin
-          //AddMessage(Name(item));
-          slLvli.AddObject(Name(item),TObject(item));
-          lvliM := wbCopyElementToFileWithPrefix(item, mxPatchFile, true, true, '', '', 'Male');
-          lvliF := wbCopyElementToFileWithPrefix(item, mxPatchFile, true, true, '', '', 'Female');
-          slLvliM.AddObject(Name(lvliM),TObject(lvliM));
-          slLvliF.AddObject(Name(lvliF),TObject(lvliF));
-          index := slLvli.Count -1;
-          SetEditValue( ElementByIndex(ElementByPath(oftM, 'INAM'), k ), slLvliM[index] );
-          SetEditValue( ElementByIndex(ElementByPath(oftF, 'INAM'), k ), slLvliF[index] );
-          ProcessLvli;
-        end else begin
-          SetEditValue( ElementByIndex(ElementByPath(oftM, 'INAM'), k ), slLvliM[index] );
-          SetEditValue( ElementByIndex(ElementByPath(oftF, 'INAM'), k ), slLvliF[index] );
-        end;
-        
-      end else
-        k := k +1;
+      items := ElementByPath(rec, 'INAM');
+      k := 0;
+      for j := 0 to ElementCount(items) - 1 do begin
+        item := LinksTo(ElementByIndex(items, j));
+        //AddMessage(Signature(item)+' '+GetEditValue(ElementByIndex(items, j)));
+        if Signature(item) = 'LVLI' then begin
+          index := IndexOfStringInArray(Name(item), slLvli);
+          if index = -1 then begin
+            //AddMessage(Name(item));
+            slLvli.AddObject(Name(item),TObject(item));
+            lvliM := wbCopyElementToFileWithPrefix(item, mxPatchFile, true, true, '', '', 'Male');
+            lvliF := wbCopyElementToFileWithPrefix(item, mxPatchFile, true, true, '', '', 'Female');
+            slLvliM.AddObject(Name(lvliM),TObject(lvliM));
+            slLvliF.AddObject(Name(lvliF),TObject(lvliF));
+            index := slLvli.Count -1;
+            SetEditValue( ElementByIndex(ElementByPath(oftM, 'INAM'), k ), slLvliM[index] );
+            SetEditValue( ElementByIndex(ElementByPath(oftF, 'INAM'), k ), slLvliF[index] );
+            ProcessLvli;
+          end else begin
+            SetEditValue( ElementByIndex(ElementByPath(oftM, 'INAM'), k ), slLvliM[index] );
+            SetEditValue( ElementByIndex(ElementByPath(oftF, 'INAM'), k ), slLvliF[index] );
+          end;
+          
+        end else
+          k := k +1;
+      end;
     end;
-
     
   end;
 
@@ -212,22 +222,25 @@ begin
   SetInclusions(sFiles);
   LoadRecords('NPC_');
 
+
   AddMessage('Processing NPCs...');
   for i := 0 to MaxRecordIndex do begin
     rec := GetRecord(i);
     //AddMessage(geev(rec, 'DOFT'));
-    if geev(rec, 'DOFT') <> '' then begin
-      index := IndexOfStringInArray(Name(LinksTo(ElementByPath(rec, 'DOFT'))), slOutfits);
-      if index <> -1 then begin
-        if geev(rec, 'ACBS/Flags/Female') = '1' then
-          seev(wbCopyElementToFile(rec, mxPatchFile, false, true),'DOFT',slOutfitsF[index])
-        else
-          seev(wbCopyElementToFile(rec, mxPatchFile, false, true),'DOFT',slOutfitsM[index]);
-      end else begin
-        AddMessage(Name(rec)+' skipped as outfit was not found');
+    if CheckInEDID(geev(rec, 'EDID')) then begin
+      if geev(rec, 'DOFT') <> '' then begin
+        index := IndexOfStringInArray(Name(LinksTo(ElementByPath(rec, 'DOFT'))), slOutfits);
+        if index <> -1 then begin
+          if geev(rec, 'ACBS/Flags/Female') = '1' then
+            seev(wbCopyElementToFile(rec, mxPatchFile, false, true),'DOFT',slOutfitsF[index])
+          else
+            seev(wbCopyElementToFile(rec, mxPatchFile, false, true),'DOFT',slOutfitsM[index]);
+        end else begin
+          AddMessage(Name(rec)+' skipped as outfit was not found');
+        end;
       end;
     end;
-  end;
+end;
 
   // clean up
   FinalizeMXPF;
