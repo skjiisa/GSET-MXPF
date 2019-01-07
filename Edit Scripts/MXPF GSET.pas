@@ -129,7 +129,7 @@ var
   slFiles, slOutfits, slOutfitsM, slOutfitsF, sMasterFiles: TStringList;
   sFiles: String;
   i, j, k, index: integer;
-  rec, item, items, lvliM, lvliF: IInterface;
+  rec, recNew, item, items, lvliM, lvliF: IInterface;
 begin
   {slFiles := TStringList.Create;
   for i := 0 to FileCount - 2 do begin
@@ -231,10 +231,12 @@ begin
       if geev(rec, 'DOFT') <> '' then begin
         index := IndexOfStringInArray(Name(LinksTo(ElementByPath(rec, 'DOFT'))), slOutfits);
         if index <> -1 then begin
+          recNew := wbCopyElementToFile(rec, mxPatchFile, false, true);
+          seev(recNew,'ACBS/Template Flags/Use Inventory',0);
           if geev(rec, 'ACBS/Flags/Female') = '1' then
-            seev(wbCopyElementToFile(rec, mxPatchFile, false, true),'DOFT',slOutfitsF[index])
+            seev(recNew,'DOFT',slOutfitsF[index])
           else
-            seev(wbCopyElementToFile(rec, mxPatchFile, false, true),'DOFT',slOutfitsM[index]);
+            seev(recNew,'DOFT',slOutfitsM[index]);
         end else begin
           AddMessage(Name(rec)+' skipped as outfit was not found');
         end;
