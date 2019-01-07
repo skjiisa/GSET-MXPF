@@ -18,7 +18,7 @@ begin
   Result := 0;
   // Template:
   //  OR pos('[word]',Value) <> 0
-  if pos('Bandit',Value) <> 0 OR pos('Warlock',Value) <> 0 OR pos('Spellsword',Value) <> 0 OR pos('thug',Value) <> 0 OR pos('Dremora',Value) <> 0 then
+  if pos('Bandit',Value) <> 0 OR pos('Warlock',Value) <> 0 OR pos('Spellsword',Value) <> 0 OR pos('thug',Value) <> 0 OR pos('Dremora',Value) <> 0 OR pos('Necro',Value) <> 0 then
     Result := 1;
 end;
 
